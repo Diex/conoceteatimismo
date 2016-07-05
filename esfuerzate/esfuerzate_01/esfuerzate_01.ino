@@ -1,17 +1,12 @@
 #include <FastLED.h>
 #include "Led.cpp"
 #define TOP_PIN     6
-#define BOTTOM_PIN     5
 #define NUM_LEDS    57
 #define BRIGHTNESS  255
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
-
-
-
+#define MAX_VALUE 4095
 CRGB top[NUM_LEDS];
-CRGB bottom[NUM_LEDS];
-
 
 #define UPDATES_PER_SECOND 100
 
@@ -72,50 +67,46 @@ int gamma[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                222, 224, 227, 229, 231, 233, 235, 237, 239, 241, 244, 246, 248, 250, 252, 255
               };
 
+float values[NUM_LEDS];
+unsigned int top_v[NUM_LEDS];
 
 void setup() {
   delay( 250 ); // power-up safety delay
   FastLED.addLeds<LED_TYPE, TOP_PIN, COLOR_ORDER>(top, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
-//  template<ESPIChipsets CHIPSET, uint8_t DATA_PIN, uint8_t CLOCK_PIN, EOrder RGB_ORDER, uint8_t SPI_DATA_RATE>
-//  FastLED.addLeds<LED_TYPE, 11,13,RGB,DATA_RATE_MHZ(10)>(top, NUM_LEDS);//.setCorrection(CRGB(255, 255, 100) );
-
-//  FastLED.addLeds<LED_TYPE, BOTTOM_PIN, COLOR_ORDER>(bottom, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
-  //  FastLED.setBrightness(BRIGHTNESS );
-  Serial.begin(9600);
+//  Serial.begin(9600);
   //  test();
-  //  test();
-  //  FastLED.clear();
-  //  FastLED.show();
   FastLED.clear();
+  FastLED.show();
+
+  for (int i = 0; i < NUM_LEDS; i++) {
+    values[i] = 0;
+  }
 }
 
-float c = 0;
-unsigned int top_v[NUM_LEDS];
-unsigned int bottom_v[NUM_LEDS];
+int decay = 11;
+float time = 0;
+float timeIncrement = 0.025;
+
+void updateValues() {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    values[i] = constrain(values[i] + decay, 0 , MAX_VALUE);
+  }
+}
 
 void loop()
 {
+//  if (random(0, 1000) < 20) values[random(0, NUM_LEDS)] = 0;
 
-  for (int value = 0; value < 4096; value++) {
-    for (int i = 0; i < NUM_LEDS; i++) {
-      getColor(top[i], value);
-//       getColor(bottom[i], 4096 - value);
-    }
-
-    if((value % 4) == 0) FastLED.show();
-
+  int w = map(sin(time) * 1000, -1000, 1000, 0, NUM_LEDS);
+  values[w] = 0;
+  
+  for (int i = 0; i < NUM_LEDS; i++) {
+    getColor(top[i], values[i]);
   }
-  return;
+  FastLED.show();
 
-  for (int value = 0; value < 4096; value++) {
-    for (int i = 0; i < NUM_LEDS; i++) {
-
-      //      top[i] = getColor(4096 - value);
-    }
-    FastLED.show();
-    FastLED.delay(10);
-
-  }
+  updateValues();
+  time += timeIncrement;
 }
 
 int ease(int current, int prev, int factor) {
