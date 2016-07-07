@@ -1,6 +1,7 @@
 #include <FastLED.h>
 #include "Led.cpp"
 #include "LFO.cpp"
+#include "TriWave.cpp"
 #define BOTTOM_PIN 6
 #define TOP_PIN 5
 #define NUM_LEDS    58
@@ -73,8 +74,6 @@ int gamma[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                222, 224, 227, 229, 231, 233, 235, 237, 239, 241, 244, 246, 248, 250, 252, 255
               };
 
-//float values[NUM_LEDS];
-//unsigned int top_v[NUM_LEDS];
 
 Led topleds[NUM_LEDS];
 Led bottomleds[NUM_LEDS];
@@ -86,7 +85,7 @@ int attack = 300;
 void setup() {
   delay(250); // power-up safety delay
   FastLED.addLeds<LED_TYPE, TOP_PIN, COLOR_ORDER>(top, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
-  FastLED.addLeds<LED_TYPE, BOTTOM_PIN, COLOR_ORDER>(bottom, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
+//  FastLED.addLeds<LED_TYPE, BOTTOM_PIN, COLOR_ORDER>(bottom, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
   FastLED.clear();
   FastLED.show();
 
