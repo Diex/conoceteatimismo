@@ -1,13 +1,13 @@
 #include <Arduino.h>
 class LFO{
   public:
-    float value;
+    double value;
     float amp;
     float freq;
     float phase;
     float fmod;
 
-    void update(float time){
+    void update(double time){
       value = sin(phase + (time * freq * fmod)) * amp;
     }
     

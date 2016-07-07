@@ -3,7 +3,7 @@
 #include "LFO.cpp"
 #define BOTTOM_PIN 6
 #define TOP_PIN 5
-#define NUM_LEDS    58
+#define NUM_LEDS    15
 #define BRIGHTNESS  255
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
@@ -73,9 +73,6 @@ int gamma[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                222, 224, 227, 229, 231, 233, 235, 237, 239, 241, 244, 246, 248, 250, 252, 255
               };
 
-//float values[NUM_LEDS];
-//unsigned int top_v[NUM_LEDS];
-
 Led topleds[NUM_LEDS];
 Led bottomleds[NUM_LEDS];
 
@@ -114,14 +111,13 @@ void updateValues() {
 void updateLeds() {
   for (int i = 0; i < NUM_LEDS; i++) {
     topleds[i].update();
-     bottomleds[i].update();
+    bottomleds[i].update();
   }
   FastLED.show();
 }
 
-
-float time = 0;
-float timeIncrement = 0.002;
+double time = 0;
+double timeIncrement = 0.002;
 
 // value, amp, freq, 
 LFO toplfo = { 0, 1, 8, 0, 1};
@@ -133,6 +129,8 @@ LFO bottomfm = {0, 1, 3, 0, 0.1};
 void loop()
 {
      
+  long time = millis();
+  
   topfm.update(time);
   toplfo.fm(topfm.getPositive());
   toplfo.update(time);
@@ -141,6 +139,8 @@ void loop()
   bottomlfo.fm(bottomfm.getPositive());
   bottomlfo.update(time);
 
+  // cualca... no se si va entre -1 y 1;
+  // funca porque amp es siempre 1.
   int wtop = map(toplfo.value * 1000, -1000, 1000, 0, NUM_LEDS);
   topleds[wtop].state = ATT;
 

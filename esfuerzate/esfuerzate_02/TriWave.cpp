@@ -6,17 +6,17 @@ class TriWave{
     float freq;
     float phase;
     float fmod;
-
-  private:
-    float dir = 1;
-    float maxValue = 1000;
-    float counter = 0;
     
-    void update(float time){
-      counter = counter + (dir * time * freq * fmod);
-      if (counter >= maxValue) {counter = maxValue; dir = -1;}
+    TriWave(float amp, float freq){
+      this->amp = amp;
+      this->freq = freq;      
+    }
+
+    void update(){
+      counter += 1; // * dir * freq;
+      if (counter >= maxValue) {counter = 0; dir = -1;}
       if (counter <= 0) {counter = 0; dir = 1;}
-      value = (counter / maxValue) * amp;
+      value = counter * amp; // / maxValue) * amp;
     }
     
     void fm(float freq){
@@ -24,6 +24,12 @@ class TriWave{
     }
     
     float getPositive(){
-      return value + amp;
+      return value;
     }
+    
+  private:
+    float dir = 1;
+    float maxValue = 4095;
+    double counter = 0;
+    
 };

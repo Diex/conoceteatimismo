@@ -2,9 +2,9 @@
 #include "Led.cpp"
 #include "LFO.cpp"
 #include "TriWave.cpp"
-#define BOTTOM_PIN 6
-#define TOP_PIN 5
-#define NUM_LEDS    58
+//#define BOTTOM_PIN 6
+#define TOP_PIN 6
+#define NUM_LEDS    57
 #define BRIGHTNESS  255
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
@@ -76,16 +76,13 @@ int gamma[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 
 
 Led topleds[NUM_LEDS];
-Led bottomleds[NUM_LEDS];
 
 int decay = 30;
 int attack = 300;
 
-
 void setup() {
   delay(250); // power-up safety delay
   FastLED.addLeds<LED_TYPE, TOP_PIN, COLOR_ORDER>(top, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
-//  FastLED.addLeds<LED_TYPE, BOTTOM_PIN, COLOR_ORDER>(bottom, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
   FastLED.clear();
   FastLED.show();
 
@@ -94,58 +91,33 @@ void setup() {
     topleds[i].decay = decay;
     topleds[i].state = DECA;    
     topleds[i].attack = attack;        
-    
-    bottomleds[i].value = 4095;
-    bottomleds[i].decay = decay;
-    bottomleds[i].state = DECA;
-    bottomleds[i].attack = attack;        
   }
 }
-
 
 void updateValues() {
   for (int i = 0; i < NUM_LEDS; i++) {
     getColor(top[i], 4095 - topleds[i].value); // invierto la tabla
-    getColor(bottom[i], 4095 - bottomleds[i].value); // invierto la tabla
   }
 }
 
 void updateLeds() {
   for (int i = 0; i < NUM_LEDS; i++) {
     topleds[i].update();
-     bottomleds[i].update();
   }
   FastLED.show();
 }
 
 
-float time = 0;
+double time = 0;
 float timeIncrement = 0.002;
-
-// value, amp, freq, 
-LFO toplfo = { 0, 1, 8, 0, 1};
-LFO topfm = {0, 1, 2, 0, 0.1};
-
-LFO bottomlfo = { 0, 1, 5, 0, 1};
-LFO bottomfm = {0, 1, 3, 0, 0.1};
+TriWave tri = TriWave(1, 5);
 
 void loop()
 {
-     
-  topfm.update(time);
-  toplfo.fm(topfm.getPositive());
-  toplfo.update(time);
-  
-  bottomfm.update(time);
-  bottomlfo.fm(bottomfm.getPositive());
-  bottomlfo.update(time);
-
-  int wtop = map(toplfo.value * 1000, -1000, 1000, 0, NUM_LEDS);
+  tri.update();
+  Serial.println(tri.value);
+  int wtop = map(tri.value/tri.amp  * 1000, 0, 1000, 0, NUM_LEDS);
   topleds[wtop].state = ATT;
-
-  int wbot = map(bottomlfo.value * 1000, -1000, 1000, 0, NUM_LEDS);
-  bottomleds[wbot].state = ATT;
-
 
   updateLeds();
   updateValues();
@@ -163,8 +135,3 @@ void getColor(CRGB &col, int white) {
   col.g = map (unit, 0, 255, a.g, b.g);
   col.b = map (unit, 0, 255, a.b, b.b);
 }
-
-
-
-
-
