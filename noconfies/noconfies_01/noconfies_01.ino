@@ -4,7 +4,7 @@
 #include "LFO.cpp"
 #define TEST 10
 #define SINE 11
-#define CIRCLE 12
+#define LUCKY 12
 
 #define BOTTOM_PIN 6
 #define TOP_PIN 5
@@ -79,24 +79,23 @@ int gamma[] PROGMEM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
               };
 
 Led topleds[NUM_LEDS];
-Led bottomleds[NUM_LEDS];
+//Led bottomleds[NUM_LEDS];
 
-int decay = 700;
-int attack = 70;
+int decay = 250;
+int attack = 250;
 
 
 void setup() {
   delay(250); // power-up safety delay
   FastLED.addLeds<LED_TYPE, TOP_PIN, COLOR_ORDER>(top, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
-  FastLED.addLeds<LED_TYPE, BOTTOM_PIN, COLOR_ORDER>(bottom, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
+  FastLED.addLeds<LED_TYPE, BOTTOM_PIN, COLOR_ORDER>(top, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
   FastLED.clear();
   FastLED.show();
 
   for (int i = 0; i < NUM_LEDS; i++) {
     topleds[i].value = 0;
     topleds[i].state = DECA;    
-    bottomleds[i].value = 0;
-    bottomleds[i].state = DECA;
+
   }
   Serial.begin(115200);
 }
@@ -105,28 +104,19 @@ void setup() {
 void render() {
   for (int i = 0; i < NUM_LEDS; i++) {
     getColor(top[i], 4095 - topleds[i].value); // invierto la tabla
-    getColor(bottom[i], 4095 - bottomleds[i].value); // invierto la tabla
   }
 }
 
 void update() {
   for (int i = 0; i < NUM_LEDS; i++) {
     topleds[i].update(attack, decay);
-    bottomleds[i].update(attack, decay);
   }
   FastLED.show();
 }
 
 
-// freq, amp
-LFO toplfo = LFO(300, NUM_LEDS);
-LFO topfm = LFO{75, 3500};
 
-LFO bottomlfo = LFO(250, NUM_LEDS);
-LFO bottomfm = LFO{120, 3000};
-
-
-int scene = SINE;
+int scene = LUCKY;
 
 
 void loop()
@@ -134,14 +124,8 @@ void loop()
   long time = millis();
   
   switch(scene){
-    case CIRCLE:
-      circle(time);        
-    break;
-    
-    case SINE:
-   
-      sine(time);
-
+    case LUCKY:
+      getLucky(time);
     break;
   }
   
@@ -153,26 +137,27 @@ void loop()
 
 }
 
-long period = 5E3;
-void circle(long time){
-  int head = map(time % period, 0, period, 0, NUM_LEDS);
-  
-  topleds[head].state = ATT;
-  bottomleds[NUM_LEDS - head].state = ATT;
-}
-
-void sine(long time){
-  
-    toplfo.fm(topfm.update(time));
-    int wtop = toplfo.update(time);
-    topleds[wtop].state = ATT;
-
-    bottomlfo.fm(bottomfm.update(time));
-    int wbot = bottomlfo.update(time);
-    bottomleds[wbot].state = ATT;
+int w;
+double i = 0;
+void getLucky(long time){
+    
+    double noise = pnoise((double) time * 0.0005, (double) 1.0, (double) 1.0);
+    int intnoise = int(noise * 1000);
+    Serial.println(noise);
+    
+    w = map(intnoise, -1000, 1000, 0, NUM_LEDS);
+    Serial.println(w);
+    topleds[w].state = ATT;
 }
 
 
+//float ease(float current, float nxt, float factor){
+//  return (current * factor) + (nxt * (1 - factor));
+//}
+
+//int ease(int current, int nxt, int factor){
+//  return ((factor * current  ) + ((100 - factor) * nxt )) / 100;
+//}
 
 // total 4096 (12 bits !!!)
 void getColor(CRGB &col, unsigned int white) {  
