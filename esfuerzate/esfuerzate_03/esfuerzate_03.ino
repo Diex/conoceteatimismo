@@ -2,9 +2,12 @@
 #include <FastLED.h>
 #include "Led.cpp"
 #include "LFO.cpp"
+#include "Tri.cpp"
+#include "Waveforms.h"
 #define TEST 10
 #define SINE 11
 #define CIRCLE 12
+#define TRI 13
 
 #define BOTTOM_PIN 6
 #define TOP_PIN 5
@@ -16,7 +19,7 @@
 #define MAX_VALUE 4095
 
 CRGB top[NUM_LEDS];
-CRGB bottom[NUM_LEDS];
+//CRGB bottom[NUM_LEDS];
 
 #define UPDATES_PER_SECOND 100
 
@@ -79,24 +82,24 @@ int gamma[] PROGMEM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
               };
 
 Led topleds[NUM_LEDS];
-Led bottomleds[NUM_LEDS];
+//Led bottomleds[NUM_LEDS];
 
-int decay = 700;
+int decay = 200;
 int attack = 70;
 
 
 void setup() {
   delay(250); // power-up safety delay
   FastLED.addLeds<LED_TYPE, TOP_PIN, COLOR_ORDER>(top, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
-  FastLED.addLeds<LED_TYPE, BOTTOM_PIN, COLOR_ORDER>(bottom, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
+//  FastLED.addLeds<LED_TYPE, BOTTOM_PIN, COLOR_ORDER>(bottom, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
   FastLED.clear();
   FastLED.show();
 
   for (int i = 0; i < NUM_LEDS; i++) {
     topleds[i].value = 0;
     topleds[i].state = DECA;    
-    bottomleds[i].value = 0;
-    bottomleds[i].state = DECA;
+//    bottomleds[i].value = 0;
+//    bottomleds[i].state = DECA;
   }
   Serial.begin(115200);
 }
@@ -105,14 +108,14 @@ void setup() {
 void render() {
   for (int i = 0; i < NUM_LEDS; i++) {
     getColor(top[i], 4095 - topleds[i].value); // invierto la tabla
-    getColor(bottom[i], 4095 - bottomleds[i].value); // invierto la tabla
+//    getColor(bottom[i], 4095 - bottomleds[i].value); // invierto la tabla
   }
 }
 
 void update() {
   for (int i = 0; i < NUM_LEDS; i++) {
     topleds[i].update(attack, decay);
-    bottomleds[i].update(attack, decay);
+//    bottomleds[i].update(attack, decay);
   }
   FastLED.show();
 }
@@ -120,13 +123,15 @@ void update() {
 
 // freq, amp
 LFO toplfo = LFO(300, NUM_LEDS);
-LFO topfm = LFO{75, 3500};
+LFO topfm = LFO(75, 3500);
 
 LFO bottomlfo = LFO(250, NUM_LEDS);
-LFO bottomfm = LFO{120, 3000};
+LFO bottomfm = LFO(120, 3000);
+
+Tri tri = Tri(1, 4095);
 
 
-int scene = SINE;
+int scene = TRI;
 
 
 void loop()
@@ -143,6 +148,11 @@ void loop()
       sine(time);
 
     break;
+    
+    case TRI:
+     quad(time);
+     
+    break;
   }
   
   
@@ -158,7 +168,7 @@ void circle(long time){
   int head = map(time % period, 0, period, 0, NUM_LEDS);
   
   topleds[head].state = ATT;
-  bottomleds[NUM_LEDS - head].state = ATT;
+//  bottomleds[NUM_LEDS - head].state = ATT;
 }
 
 void sine(long time){
@@ -167,9 +177,27 @@ void sine(long time){
     int wtop = toplfo.update(time);
     topleds[wtop].state = ATT;
 
-    bottomlfo.fm(bottomfm.update(time));
-    int wbot = bottomlfo.update(time);
-    bottomleds[wbot].state = ATT;
+//    bottomlfo.fm(bottomfm.update(time));
+//    int wbot = bottomlfo.update(time);
+//    bottomleds[wbot].state = ATT;
+}
+
+
+
+//y = y0 + v0 t + ½.g. t²
+void quad(long time){
+  
+   int t = tri.update(0);
+   Serial.println(t);
+   
+   int idx = map(t, 0, 4095, 0, 127);
+   
+   int w = map((int16_t) pgm_read_word_near(quadinout + idx), -2048, 1985, 0, NUM_LEDS - 1);   
+   
+//   int w = map(t,
+   topleds[w].state = ATT;
+
+
 }
 
 
