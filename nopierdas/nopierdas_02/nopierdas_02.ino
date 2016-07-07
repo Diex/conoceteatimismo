@@ -211,9 +211,9 @@ void getColor(CRGB &col, int white) {
   int fract8 = white % 256;
   CRGB a = colors[dec]; 
   CRGB b = colors[dec+1];
-  col.r = constrain(lerp8by8(a.r, b.r, fract8 ), 0, 255); //map (unit, 0, 255, );
-  col.g = constrain(lerp8by8(a.g, b.g, fract8 ), 0, 255);
-  col.b = constrain(lerp8by8(a.b, b.b, fract8 ), 0, 255);
+  col.r = qadd8( 0, lerp8by8(a.r, b.r, fract8 ));
+  col.g = qadd8( 0, lerp8by8(a.r, b.r, fract8 ));
+  col.b = qadd8( 0, lerp8by8(a.r, b.r, fract8 ));
 }
 
 
