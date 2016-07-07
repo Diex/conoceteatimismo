@@ -1,3 +1,4 @@
+#include <avr/pgmspace.h>
 #include <FastLED.h>
 #include "Led.cpp"
 #include "LFO.cpp"
@@ -58,7 +59,7 @@ const CRGB colors[]  = {
                      col17
                 };
 
-int gamma[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+int gamma[] PROGMEM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2,
                2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,
                6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 11, 11,
@@ -79,7 +80,7 @@ int gamma[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 Led topleds[NUM_LEDS];
 Led bottomleds[NUM_LEDS];
 
-int decay = 200;
+int decay = 20;
 int attack = 50;
 
 
@@ -91,15 +92,15 @@ void setup() {
   FastLED.show();
 
   for (int i = 0; i < NUM_LEDS; i++) {
-    topleds[i].value = 255;
-    topleds[i].decay = decay;
+    topleds[i].value = 0;
+//    topleds[i].decay = decay;
     topleds[i].state = DECA;    
-    topleds[i].attack = attack;        
+//    topleds[i].attack = attack;        
     
-    bottomleds[i].value = 255;
-    bottomleds[i].decay = decay;
+    bottomleds[i].value = 0;
+//    bottomleds[i].decay = decay;
     bottomleds[i].state = DECA;
-    bottomleds[i].attack = attack;        
+//    bottomleds[i].attack = attack;        
   }
   Serial.begin(115200);
 }
@@ -114,24 +115,24 @@ void render() {
 
 void update() {
   for (int i = 0; i < NUM_LEDS; i++) {
-    topleds[i].update();
-    bottomleds[i].update();
+    topleds[i].update(attack, decay);
+    bottomleds[i].update(attack, decay);
   }
   FastLED.show();
 }
 
-double time = 0;
-double timeIncrement = 0.002;
+//double time = 0;
+//double timeIncrement = 0.002;
 
-// value, amp, freq, 
-LFO toplfo = { 0, 1, 8, 0, 1};
-LFO topfm = {0, 1, 2, 0, 0.1};
+// freq, amp
+LFO toplfo = LFO(1, 1);
+//LFO topfm = {0, 1, 2, 0, 0.1};
 
-LFO bottomlfo = { 0, 1, 5, 0, 1};
-LFO bottomfm = {0, 1, 3, 0, 0.1};
+//LFO bottomlfo = { 0, 1, 5, 0, 1};
+//LFO bottomfm = {0, 1, 3, 0, 0.1};
 
 
-int scene = TEST;
+int scene = SINE;
 
 
 void loop()
@@ -144,16 +145,14 @@ void loop()
     break;
     
     case SINE:
-      // cualca... no se si va entre -1 y 1;
-  // funca porque amp es siempre 1.
     toplfo.update(time);
-  int wtop = map(toplfo.value * 1000, -1000, 1000, 0, NUM_LEDS);
-  topleds[wtop].state = ATT;
+    int wtop = map((toplfo.norm() * 1000), -1000, 1000, 0, NUM_LEDS);
+    topleds[wtop].state = ATT;
 
 
-   bottomlfo.update(time);
-  int wbot = map(bottomlfo.value * 1000, -1000, 1000, 0, NUM_LEDS);
-  bottomleds[wbot].state = ATT;
+//   bottomlfo.update(time);
+//  int wbot = map(bottomlfo.value * 1000, -1000, 1000, 0, NUM_LEDS);
+//  bottomleds[wbot].state = ATT;
 
     break;
   }
@@ -165,55 +164,56 @@ void loop()
   render();
 
   return;
-  
-     
-  
-  topfm.update(time);
-  toplfo.fm(topfm.getPositive());
-
-  
-  bottomfm.update(time);
-  bottomlfo.fm(bottomfm.getPositive());
- 
-
-
-
-  update();
-
-  render();
-  time += timeIncrement;
+//  
+//     
+//  
+//  topfm.update(time);
+//  toplfo.fm(topfm.getPositive());
+//
+//  
+//  bottomfm.update(time);
+//  bottomlfo.fm(bottomfm.getPositive());
+// 
+//
+//
+//
+//  update();
+//
+//  render();
+//  time += timeIncrement;
 }
-
-long period = 10E3;
-
+//
+long period = 5E3;
 void test(){
   long time = millis();
   int head = map(time % period, 0, period, 0, NUM_LEDS);
   topleds[head].state = ATT;
-  Serial.println(head);
+  bottomleds[NUM_LEDS - head].state = ATT;
+//  Serial.println(head);
 }
 
 
-// total 4096 (10 bits !!!)
-void getColor8(CRGB &col, int white) {
-  int dec = white / 16;
-  int fract8 = white % 16;
-  CRGB a = colors[dec]; 
-  CRGB b = colors[dec+1];
-  col.r = lerp8by8(   a.r, b.r, fract8 * 16); //map (unit, 0, 255, );
-  col.g = lerp8by8(   a.g, b.g, fract8 * 16 );
-  col.b = lerp8by8(   a.b, b.b, fract8 * 16 );
-}
+//void getColor8(CRGB &col, int white) {
+//  int dec = white / 16;
+//  int fract8 = white % 16;
+//  CRGB a = colors[dec]; 
+//  CRGB b = colors[dec+1];
+//  col.r = lerp8by8(   a.r, b.r, fract8 * 16); //map (unit, 0, 255, );
+//  col.g = lerp8by8(   a.g, b.g, fract8 * 16 );
+//  col.b = lerp8by8(   a.b, b.b, fract8 * 16 );
+//}
 
 // total 4096 (12 bits !!!)
 void getColor(CRGB &col, int white) {
-  int dec = white / 256;
+  
+  int corrected = pgm_read_word_near(gamma + white / 16);
+  int dec = corrected / 16;
   int fract8 = white % 256;
   CRGB a = colors[dec]; 
   CRGB b = colors[dec+1];
-  col.r = lerp8by8(   a.r, b.r, fract8 ); //map (unit, 0, 255, );
-  col.g = lerp8by8(   a.g, b.g, fract8 );
-  col.b = lerp8by8(   a.b, b.b, fract8 );
+  col.r = constrain(lerp8by8(a.r, b.r, fract8 ), 0, 255); //map (unit, 0, 255, );
+  col.g = constrain(lerp8by8(a.g, b.g, fract8 ), 0, 255);
+  col.b = constrain(lerp8by8(a.b, b.b, fract8 ), 0, 255);
 }
 
 

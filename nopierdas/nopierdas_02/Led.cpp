@@ -8,11 +8,11 @@ class Led
     int maxValue = 4095;
   public:
     int value;
-    int attack;
-    int decay;    
+//    int attack;
+//    int decay;    
     int state;
     
-    void update(){
+    void update(int attack, int decay){
         switch(state){
           case ATT:
              value = constrain(value + maxValue/attack, 0, maxValue);
