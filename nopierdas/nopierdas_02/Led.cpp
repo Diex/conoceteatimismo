@@ -4,6 +4,8 @@
 
 class Led
 {
+  private:
+    int maxValue = 4095;
   public:
     int value;
     int attack;
@@ -13,13 +15,12 @@ class Led
     void update(){
         switch(state){
           case ATT:
-             value = constrain(value + attack, 0, 4095);
-             if(value == 4095) state = DECA;
+             value = constrain(value + maxValue/attack, 0, maxValue);
+             if(value >= maxValue) state = DECA;
           break;
           
           case DECA:
-             value = constrain(value - decay, 0, 4095);
-             // if(value == 0) state = ATT;
+             value = constrain(value - maxValue/decay, 0, maxValue);
           break;          
         }
     };

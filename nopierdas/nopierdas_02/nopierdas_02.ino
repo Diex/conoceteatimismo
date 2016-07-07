@@ -1,19 +1,22 @@
 #include <FastLED.h>
 #include "Led.cpp"
 #include "LFO.cpp"
+#define TEST 10
+#define SINE 11
+
 #define BOTTOM_PIN 6
 #define TOP_PIN 5
-#define NUM_LEDS    15
+
+#define NUM_LEDS    57
 #define BRIGHTNESS  255
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER GRB
 #define MAX_VALUE 4095
+
 CRGB top[NUM_LEDS];
 CRGB bottom[NUM_LEDS];
 
 #define UPDATES_PER_SECOND 100
-
-//const dataType variableName[] PROGMEM = {data0, data1, data3...};
 
 
 const CRGB col1  =	 CRGB(255, 254, 255);
@@ -76,8 +79,8 @@ int gamma[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 Led topleds[NUM_LEDS];
 Led bottomleds[NUM_LEDS];
 
-int decay = 30;
-int attack = 300;
+int decay = 200;
+int attack = 50;
 
 
 void setup() {
@@ -88,27 +91,28 @@ void setup() {
   FastLED.show();
 
   for (int i = 0; i < NUM_LEDS; i++) {
-    topleds[i].value = 4095;
+    topleds[i].value = 255;
     topleds[i].decay = decay;
     topleds[i].state = DECA;    
     topleds[i].attack = attack;        
     
-    bottomleds[i].value = 4095;
+    bottomleds[i].value = 255;
     bottomleds[i].decay = decay;
     bottomleds[i].state = DECA;
     bottomleds[i].attack = attack;        
   }
+  Serial.begin(115200);
 }
 
 
-void updateValues() {
+void render() {
   for (int i = 0; i < NUM_LEDS; i++) {
     getColor(top[i], 4095 - topleds[i].value); // invierto la tabla
     getColor(bottom[i], 4095 - bottomleds[i].value); // invierto la tabla
   }
 }
 
-void updateLeds() {
+void update() {
   for (int i = 0; i < NUM_LEDS; i++) {
     topleds[i].update();
     bottomleds[i].update();
@@ -126,43 +130,90 @@ LFO topfm = {0, 1, 2, 0, 0.1};
 LFO bottomlfo = { 0, 1, 5, 0, 1};
 LFO bottomfm = {0, 1, 3, 0, 0.1};
 
+
+int scene = TEST;
+
+
 void loop()
 {
-     
   long time = millis();
   
-  topfm.update(time);
-  toplfo.fm(topfm.getPositive());
-  toplfo.update(time);
-  
-  bottomfm.update(time);
-  bottomlfo.fm(bottomfm.getPositive());
-  bottomlfo.update(time);
-
-  // cualca... no se si va entre -1 y 1;
+  switch(scene){
+    case TEST:
+      test();        
+    break;
+    
+    case SINE:
+      // cualca... no se si va entre -1 y 1;
   // funca porque amp es siempre 1.
+    toplfo.update(time);
   int wtop = map(toplfo.value * 1000, -1000, 1000, 0, NUM_LEDS);
   topleds[wtop].state = ATT;
 
+
+   bottomlfo.update(time);
   int wbot = map(bottomlfo.value * 1000, -1000, 1000, 0, NUM_LEDS);
   bottomleds[wbot].state = ATT;
 
+    break;
+  }
+  
+  
+  
+  
+  update();
+  render();
 
-  updateLeds();
-  updateValues();
+  return;
+  
+     
+  
+  topfm.update(time);
+  toplfo.fm(topfm.getPositive());
 
+  
+  bottomfm.update(time);
+  bottomlfo.fm(bottomfm.getPositive());
+ 
+
+
+
+  update();
+
+  render();
   time += timeIncrement;
 }
 
+long period = 10E3;
+
+void test(){
+  long time = millis();
+  int head = map(time % period, 0, period, 0, NUM_LEDS);
+  topleds[head].state = ATT;
+  Serial.println(head);
+}
+
+
 // total 4096 (10 bits !!!)
-void getColor(CRGB &col, int white) {
-  int dec = white / 256;
-  int unit = white % 256;
+void getColor8(CRGB &col, int white) {
+  int dec = white / 16;
+  int fract8 = white % 16;
   CRGB a = colors[dec]; 
   CRGB b = colors[dec+1];
-  col.r = map (unit, 0, 255, a.r, b.r);
-  col.g = map (unit, 0, 255, a.g, b.g);
-  col.b = map (unit, 0, 255, a.b, b.b);
+  col.r = lerp8by8(   a.r, b.r, fract8 * 16); //map (unit, 0, 255, );
+  col.g = lerp8by8(   a.g, b.g, fract8 * 16 );
+  col.b = lerp8by8(   a.b, b.b, fract8 * 16 );
+}
+
+// total 4096 (12 bits !!!)
+void getColor(CRGB &col, int white) {
+  int dec = white / 256;
+  int fract8 = white % 256;
+  CRGB a = colors[dec]; 
+  CRGB b = colors[dec+1];
+  col.r = lerp8by8(   a.r, b.r, fract8 ); //map (unit, 0, 255, );
+  col.g = lerp8by8(   a.g, b.g, fract8 );
+  col.b = lerp8by8(   a.b, b.b, fract8 );
 }
 
 
