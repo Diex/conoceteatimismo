@@ -1,6 +1,6 @@
-#include <avr/pgmspace.h>
 #include <FastLED.h>
 #include "Led.cpp"
+#include "LFO.cpp"
 #define BOTTOM_PIN 6
 #define TOP_PIN 5
 #define NUM_LEDS    58
@@ -107,6 +107,7 @@ void setup() {
 void updateValues() {
   for (int i = 0; i < NUM_LEDS; i++) {
     getColor(top[i], 4095 - topleds[i].value); // invierto la tabla
+    getColor(bottom[i], 4095 - bottomleds[i].value); // invierto la tabla
   }
 }
 
@@ -121,36 +122,35 @@ void updateLeds() {
 float time = 0;
 float timeIncrement = 0.0025;
 
-float topfreq = 10;
-float topfm = 1;
-float topfmx = 0.5;
-float topphase;
+
+LFO toplfo = { 0, 1, 10, 0};
+LFO bottomlfo = { 0, 1, 5, 0};
 
 void loop()
 {
- 
-  topfmx = sin(time + topfm);
-  int wtop = map(sin(topphase) * 1000, -1000, 1000, 0, NUM_LEDS);
+   
+  toplfo.update(time);
+  bottomlfo.update(time);
+
+  int wtop = map(toplfo.value * 1000, -1000, 1000, 0, NUM_LEDS);
   topleds[wtop].state = ATT;
+
+  int wbot = map(bottomlfo.value * 1000, -1000, 1000, 0, NUM_LEDS);
+  bottomleds[wbot].state = ATT;
+
+
   updateLeds();
   updateValues();
 
-  topphase += timeIncrement * topfreq * topfmx;
-}
-
-int ease(int current, int prev, int factor) {
-  //  return current * factor +
+  time += timeIncrement;
 }
 
 // total 4096 (10 bits !!!)
 void getColor(CRGB &col, int white) {
   int dec = white / 256;
   int unit = white % 256;
-
-  CRGB a = colors[dec]; // (CRGB)pgm_read_word(&());
-  CRGB b = colors[dec+1]; //(CRGB)pgm_read_word(&(colors[dec+1]));
-
-
+  CRGB a = colors[dec]; 
+  CRGB b = colors[dec+1];
   col.r = map (unit, 0, 255, a.r, b.r);
   col.g = map (unit, 0, 255, a.g, b.g);
   col.b = map (unit, 0, 255, a.b, b.b);
