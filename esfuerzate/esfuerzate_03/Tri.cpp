@@ -3,7 +3,7 @@ class Tri{
   private:
    unsigned int dtime;
    unsigned long ptime;
-   unsigned long res = 4095;
+   unsigned long res = 2048;
    unsigned long step = 0;
    boolean up = true;
    

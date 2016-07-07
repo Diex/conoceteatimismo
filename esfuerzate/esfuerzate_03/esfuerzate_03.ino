@@ -1,5 +1,6 @@
 #include <avr/pgmspace.h>
 #include <FastLED.h>
+#include "EasingLibrary.h"
 #include "Led.cpp"
 #include "LFO.cpp"
 #include "Tri.cpp"
@@ -22,6 +23,7 @@ CRGB top[NUM_LEDS];
 //CRGB bottom[NUM_LEDS];
 
 #define UPDATES_PER_SECOND 100
+
 
 
 const CRGB col1  =	 CRGB(255, 254, 255);
@@ -82,25 +84,26 @@ int gamma[] PROGMEM = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
               };
 
 Led topleds[NUM_LEDS];
-//Led bottomleds[NUM_LEDS];
-
-int decay = 200;
-int attack = 70;
+int decay = 500;
+int attack = 150;
+ExponentialEase quadratic;
 
 
 void setup() {
   delay(250); // power-up safety delay
   FastLED.addLeds<LED_TYPE, TOP_PIN, COLOR_ORDER>(top, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
-//  FastLED.addLeds<LED_TYPE, BOTTOM_PIN, COLOR_ORDER>(bottom, NUM_LEDS).setCorrection(CRGB(255, 255, 100) );
   FastLED.clear();
   FastLED.show();
 
   for (int i = 0; i < NUM_LEDS; i++) {
     topleds[i].value = 0;
     topleds[i].state = DECA;    
-//    bottomleds[i].value = 0;
-//    bottomleds[i].state = DECA;
+
   }
+  
+  quadratic.setDuration(2048);  // 2 units, which we will interpret as seconds
+  quadratic.setTotalChangeInPosition(NUM_LEDS);
+  
   Serial.begin(115200);
 }
 
@@ -183,19 +186,25 @@ void sine(long time){
 }
 
 
-
+double easedPosition,t=0;
 //y = y0 + v0 t + ½.g. t²
 void quad(long time){
   
    int t = tri.update(0);
+   
+   int w = quadratic.easeInOut(t);
+   
+   topleds[w].state = ATT;
+   return;
+  
+   
    Serial.println(t);
    
    int idx = map(t, 0, 4095, 0, 127);
    
-   int w = map((int16_t) pgm_read_word_near(quadinout + idx), -2048, 1985, 0, NUM_LEDS - 1);   
+//   int w = map((int16_t) pgm_read_word_near(quadinout + idx), -2048, 1985, 0, NUM_LEDS - 1);   
    
 //   int w = map(t,
-   topleds[w].state = ATT;
 
 
 }
